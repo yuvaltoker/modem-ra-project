@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+
+    redis_db:
+        image: redis:latest
+        ports:
+            - "6379"
+        networks:
+            - the_network
+        container_name: redis_db     
+
+    testing_snmpd:
+        build:
+            context: ./dock_snmpd
+            dockerfile: Dockerfile
+        networks:
+            - the_network
+        depends_on:
+            - redis_db
+        container_name: testing_snmpd
+
+
+    test:
+        build:
+            context: ./dock_test
+            dockerfile: Dockerfile
+        networks:
+            - the_network
+        container_name: test
+
+
+
+networks:
+    the_network:
+        name: the_network
+        driver: bridge
+

@@ -9,7 +9,7 @@ services:
             - the_network
         container_name: redis_db     
 
-    testing_snmpd:
+    snmpd:
         build:
             context: ./dock_snmpd
             dockerfile: Dockerfile
@@ -17,16 +17,16 @@ services:
             - the_network
         depends_on:
             - redis_db
-        container_name: testing_snmpd
+        container_name: snmpd
 
 
-    test:
+    modem:
         build:
             context: ./dock_test
             dockerfile: Dockerfile
         networks:
             - the_network
-        container_name: test
+        container_name: modem
 
 
 

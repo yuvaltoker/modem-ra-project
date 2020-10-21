@@ -27,7 +27,7 @@ CFLAGS=-I. `net-snmp-config --cflags`
 ANOTHERFLAG=-std=c99
 BUILDLIBS=`net-snmp-config --libs `
 BUILDAGENTLIBS=`net-snmp-config --agent-libs`
-LIBINCLUDES= -L/new_snmpd_test/hiredis
+LIBINCLUDES= -L/create_snmpd/hiredis
 
 # shared library flags (assumes gcc)
 DLFLAGS=-fPIC -shared

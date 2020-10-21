@@ -20,13 +20,13 @@ services:
         container_name: snmpd
 
 
-    modem:
-        build:
-            context: ./dock_test
-            dockerfile: Dockerfile
-        networks:
-            - the_network
-        container_name: modem
+#    modem:
+#        build:
+#            context: ./dock_test
+#            dockerfile: Dockerfile
+#        networks:
+#            - the_network
+#        container_name: modem
 
 
 

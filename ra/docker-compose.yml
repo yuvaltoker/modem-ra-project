@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+
+    testing_snmptrapd:
+        build:
+            context: ./dock_snmptrapd
+            dockerfile: Dockerfile
+        networks:
+            - the_network
+        container_name: testing_snmptrapd
+
+
+    test:
+        build:
+            context: ./dock_test
+            dockerfile: Dockerfile
+        networks:
+            - the_network
+        container_name: test
+
+
+
+networks:
+    the_network:
+        name: the_network
+        driver: bridge
+

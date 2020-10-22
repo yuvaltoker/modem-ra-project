@@ -71,7 +71,7 @@ batteryObject OBJECT-TYPE
     STATUS      current
     DESCRIPTION
 	"This is a nice description. Also this is the mib that represent
-                           a modem's channel update.
+                               a modem's channel.
           But first of all, and last of all, THIS IS A NICE DESCRIPTION"
     DEFVAL { 1 }
     ::= { nstAgentModules 4 }
@@ -82,10 +82,22 @@ channelObject OBJECT-TYPE
     STATUS      current
     DESCRIPTION
 	"This is a nice description. Also this is the mib that represent
-                          a modem's battery update. 
+                                a modem's battery. 
           But first of all, and last of all, THIS IS A NICE DESCRIPTION"
     DEFVAL { 2 }
     ::= { nstAgentModules 5 }
+
+currentObject OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This is a nice description. Also this is the mib that represent
+                          the current modem's id.
+          But first of all, and last of all, THIS IS A NICE DESCRIPTION"
+    DEFVAL { 2 }
+    ::= { nstAgentModules 6 }
+
 
 stringObject OBJECT-TYPE
     SYNTAX      String
@@ -96,14 +108,14 @@ stringObject OBJECT-TYPE
                     actually nothing, but i wanted it here.
           So, first of all, and last of all, THIS IS A NICE DESCRIPTION"
     DEFVAL { 3 }
-    ::= { nstAgentModules 6 }
+    ::= { nstAgentModules 7 }
 
 
 nstAgentTrapObject NOTIFICATION-TYPE
 	STATUS current
         OBJECTS { sysLocation }
 	DESCRIPTION "Just a test notification"
-        ::= { nstAgentModules 7 }
+        ::= { nstAgentModules 8 }
 
 -- END:  Don't forget this!
 END

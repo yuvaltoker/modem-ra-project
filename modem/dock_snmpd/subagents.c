@@ -71,9 +71,10 @@ void shutdownRedis(void)
  * GET and SET requests to this variable changing it's value as needed.
  */
 
+static int currentObject_value = 0;
 static int batteryObject_value = 4; // The first value of the mib. (1-100)
 static int channelObject_value = 1; // The first value of the mib. (1-12)
-enum object_mode { battery_mode, channel_mode};
+enum object_mode { battery_mode, channel_mode, current_mode};
 /** Initializes the sub_agent_test module */
 void
 init_subagents(void)
@@ -84,13 +85,17 @@ init_subagents(void)
 
     static oid channelObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 5 };
 
+    static oid currentObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 6 };
     //DEBUGMSGTL(("batteryAgentSubagentObject", "Initializing\n"));
 
     // Setting the battery value in redis for the first time
-    SET_objects_redis(battery_mode);
+    //SET_objects_redis(battery_mode);
 
     // Setting the channel value in redis for the first time
-    SET_objects_redis(channel_mode);
+    //SET_objects_redis(channel_mode);
+
+    // Setting the current modem's id value in redis for the first time
+    SET_objects_redis(current_mode);
 
     // Registering the mib-handler, thus making the subagent able to maintain the battery mib
     netsnmp_register_handler(
@@ -105,6 +110,14 @@ init_subagents(void)
                                             channelObject_oid, OID_LENGTH(channelObject_oid),
                                             HANDLER_CAN_RWRITE
         ));
+
+    // Registering the mib-handler, thus making the subagent able to maintain the current mib
+    netsnmp_register_handler(
+        netsnmp_create_handler_registration("currentObject", handle_currentObject,
+                                            currentObject_oid, OID_LENGTH(currentObject_oid),
+                                            HANDLER_CAN_RWRITE
+        ));
+
 
 }
 
@@ -247,25 +260,95 @@ handle_channelObject(netsnmp_mib_handler *handler,
 }
 
 
-//-----------------------------------------------------------------------------------//
-//make the get and set functions smart, send them which mib you want to change or get// 
-//-----------------------------------------------------------------------------------//
+int
+handle_currentObject(netsnmp_mib_handler *handler,
+                               netsnmp_handler_registration *reginfo,
+                               netsnmp_agent_request_info   *reqinfo,
+                               netsnmp_request_info         *requests)
+{
+    int ret;
+    /* we are never called for a GETNEXT if it's registered as a
+       "instance", as it's "megically" handled for us. */
+
+    /* a instance handler also only hands us one request at a time, so
+       we don't need to loop over a list of requests; we'll only get one. */
+
+    switch(reqinfo->mode)
+    {
+     	case MODE_GET: // snmpget
+            snmp_set_var_typed_value(requests->requestvb, ASN_INTEGER,
+                                     &currentObject_value,
+                                     sizeof(currentObject_value));
+            snmp_log(LOG_ERR, "mode (%d) in handle_currentObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_RESERVE1:
+            snmp_log(LOG_ERR, "mode (%d) (reserve1) in handle_currentObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_RESERVE2:
+            snmp_log(LOG_ERR, "mode (%d) (reserve2) in handle_currentObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_FREE:
+            snmp_log(LOG_ERR, "mode (%d) (set-free) in handle_currentObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_COMMIT:
+            snmp_log(LOG_ERR, "mode (%d) (commit) in handle_currentObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_UNDO:
+             snmp_log(LOG_ERR, "mode (%d) (set-undo) in handle_currentObject\n", reqinfo->mode);
+             break;
+
+        case MODE_SET_ACTION: // snmpset
+            /* perform the value change here */
+
+            snmp_log(LOG_ERR, "mode (%d) (set-action) in handle_currentObject\n", reqinfo->mode);
+            if(requests->requestvb->type != ASN_INTEGER) // If it's not an integer
+            {
+             	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGTYPE);
+                return SNMP_ERR_WRONGTYPE;
+            }
+
+            /*if(*requests->requestvb->val.integer < 0 || *requests->requestvb->val.integer > 12) // If channel is not between 0-12
+            {
+             	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGVALUE);
+                return SNMP_ERR_WRONGVALUE;
+            }*/
+            currentObject_value = *requests->requestvb->val.integer; // Setting currentObject_value as an preparation for the next function
+            snmp_log(LOG_ERR, ("before entering the SET_objects_redis(current_mode)   %d", current_mode));
+            SET_objects_redis(current_mode); // Calling the fucntion which takes care of redis' setting
+            snmp_log(LOG_ERR, "after entering the SET_objects_redis(current_mode)");
+            break;
+
+        default:
+             /* we should never get here, so this is a really bad error */
+             snmp_log(LOG_ERR, "unknown mode (%d) in handle_currentObject\n", reqinfo->mode);
+             return SNMP_ERR_GENERR;
+    }
+    return SNMP_ERR_NOERROR;
+}
+
 
 void GET_objects_redis(int mode) // Manages snmpget
 {   // mode: 0 - battery
-    //       1 - channel  
+    //       1 - channel
+    //       2 - current
     //GET LOCAL MANAGE INFO
 
     redisReply *reply;
+    reply = (redisReply*)(redisCommand(c, "GET currentObjectField"));
     if(mode == battery_mode)
     {
         // Normal redis get command, getting batteryObjectField from redis server
-        reply = (redisReply*)(redisCommand(c, "GET batteryObjectField"));
+        reply = (redisReply*)(redisCommand(c, ("GET modem_NO_%s batteryObjectField", reply->str)));
     }
     else
     {
         // Normal redis get command, getting channelObjectField from redis server
-        reply = (redisReply*)(redisCommand(c, "GET channelObjectField"));
+        reply = (redisReply*)(redisCommand(c, ("GET modem_NO_%s channelObjectField", reply->str)));
     }
 
     if(reply->type == REDIS_REPLY_ERROR)
@@ -279,15 +362,19 @@ void GET_objects_redis(int mode) // Manages snmpget
         {
             if(mode == battery_mode)
             { memset(&batteryObject_value, 0, sizeof(batteryObject_value)); }
-            else
+            else if(mode == channel_mode)
             { memset(&channelObject_value, 0, sizeof(channelObject_value)); }
+            else
+            { memset(&currentObject_value, 0, sizeof(currentObject_value)); }
         }
 	else
 	{
             if(mode == battery_mode)
             { memmove(batteryObject_value, reply->str, sizeof(batteryObject_value)); }
-            else
+            else if(mode == channel_mode)
             { memmove(channelObject_value, reply->str, sizeof(channelObject_value)); }
+            else
+            { memmove(currentObject_value, reply->str, sizeof(currentObject_value)); }
         }
     }
     freeReplyObject(reply);
@@ -296,16 +383,20 @@ void GET_objects_redis(int mode) // Manages snmpget
 void SET_objects_redis(int mode)
 {
     redisReply *reply;
-    
     if(mode == battery_mode)
     {
-        // Normal redis set command, setting batteryObjectField from redis server
-        reply = (redisReply*)(redisCommand(*con, "SET batteryObjectField %d", batteryObject_value));
+        // Normal redis set command, setting batteryObjectField of currentObject_value from redis server
+        reply = (redisReply*)(redisCommand(*con, "SET modem_NO_%d batteryObjectField %d", currentObject_value,batteryObject_value));
+    }
+    else if(mode == channel_mode)
+    {
+        // Normal redis set command, setting channelObjectField of currentObject_value from redis server
+        reply = (redisReply*)(redisCommand(*con, "SET modem_NO_%d channelObjectField %d",  currentObject_value,channelObject_value));
     }
     else
     {
-        // Normal redis set command, setting channelObjectField from redis server
-        reply = (redisReply*)(redisCommand(*con, "SET channelObjectField %d", channelObject_value));
+        // Normal redis set command, setting currentObjectField from redis server
+        reply = (redisReply*)(redisCommand(*con, "SET currentObjectField %d",  currentObject_value));
     }
 
     if(reply->type == REDIS_REPLY_ERROR)

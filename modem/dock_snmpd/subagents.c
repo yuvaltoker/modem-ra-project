@@ -88,14 +88,14 @@ init_subagents(void)
     static oid currentObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 6 };
     //DEBUGMSGTL(("batteryAgentSubagentObject", "Initializing\n"));
 
+    // Setting the current modem's id value in redis for the first time
+    SET_objects_redis(current_mode); 
+
     // Setting the battery value in redis for the first time
     //SET_objects_redis(battery_mode);
 
     // Setting the channel value in redis for the first time
     //SET_objects_redis(channel_mode);
-
-    // Setting the current modem's id value in redis for the first time
-    SET_objects_redis(current_mode);
 
     // Registering the mib-handler, thus making the subagent able to maintain the battery mib
     netsnmp_register_handler(
@@ -317,10 +317,14 @@ handle_currentObject(netsnmp_mib_handler *handler,
              	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGVALUE);
                 return SNMP_ERR_WRONGVALUE;
             }*/
+            snmp_log(LOG_ERR, "before the current_mode printing\n");
+            snmp_log(LOG_ERR, current_mode);
+            snmp_log(LOG_ERR, ("     %d\n", current_mode));
+            snmp_log(LOG_ERR,("before the setting value, current mode = %d, currentObject_value = %d\n", current_mode, currentObject_value));
             currentObject_value = *requests->requestvb->val.integer; // Setting currentObject_value as an preparation for the next function
-            snmp_log(LOG_ERR, ("before entering the SET_objects_redis(current_mode)   %d", current_mode));
+            snmp_log(LOG_ERR, ("before entering the SET_objects_redis(current_mode\n)   %d", current_mode));
             SET_objects_redis(current_mode); // Calling the fucntion which takes care of redis' setting
-            snmp_log(LOG_ERR, "after entering the SET_objects_redis(current_mode)");
+            snmp_log(LOG_ERR, "after entering the SET_objects_redis(current_mode)\n");
             break;
 
         default:

@@ -3,7 +3,7 @@
 
 # keep in mind you need a Dockerfile in path
 # how many modems are there? then add 1
-declare -i x=$(docker container ls -a | grep modem | wc -l)
+declare -i x=$(docker container ls -a | grep modem_NO_ | wc -l)
 let "x += 1"
 container_name="modem_NO_$x"
 

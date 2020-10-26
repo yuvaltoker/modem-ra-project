@@ -8,10 +8,15 @@ while read oid val
 do
   if [ "$vars" = "" ]
   then
-    vars="$oid = $val"
+    vars="$oid = $val\n"
   else
-    vars="$vars, $oid = $val"
+    vars="$vars, $oid = $val\n"
   fi
 done
                                                                          $
-echo trap: $1 $host $ip $vars > /tmp/go.out
+
+# The Original:
+#echo trap: $1 $host $ip $vars > /tmp/go.out  
+# Testing
+#echo trap: $vars > /tmp/go.out
+echo okay

@@ -1,8 +1,7 @@
-import redis
+#!/usr/bin/env python3
+
 import socket
 from datetime import datetime, date
-
-client = rediss.Redis(host = 'redis_db', port = 6379)
 
 port = 162
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -19,15 +18,16 @@ while True:
         print("Waiting for modems")
 
     data, addr = s.recvfrom(4048)
-    message  = "message" # receiving snmptrap message
+    data = data.decode('utf-8')
+    message  = data # receiving snmptrap message
 
 
     # checking wether the message is String ("im here" / "im dead")
     #                                integer(battery / channel updating)
-    if message == "string": #
-        if message == "im here": #
+    if message.startswith("string"): #
+        if "im here" in message: #
             # welcome new modem, lets add you to the list and DB
-        if message == "im dead": #
+        if "im dead" in message: #
             # bye bye... lets update everything
 
 

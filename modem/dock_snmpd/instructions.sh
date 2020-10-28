@@ -8,10 +8,9 @@ snmpd -f -Lf snmpd_file.log -C -M /usr/share/snmp/mibs --rwcommunity=public --ma
 
 cd create_snmpd
 make example-daemon
-./example-daemon -f -Lf subagent_fil.log -x tcp:localhost:161 &
-#make example-daemon
-#./example-daemon -f -Lf subagent_file.log -x  tcp:localhost:161 &
+./example-daemon -f -Lf subagent_file.log -x tcp:localhost:161 &
 
+# keeps the container alive:
 while true; do
     sleep 5
 done

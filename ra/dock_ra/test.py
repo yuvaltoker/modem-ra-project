@@ -109,8 +109,8 @@ def snmpsetFunction(objectOID, value):
                              errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
          break
      else:
-         for varBind in varBinds:
-             print(' = '.join([x.prettyPrint() for x in varBind]))
+         for oid, val in varBinds:
+             print('%s = %s' % (oid, val))
     #engine = SnmpEngine()
     #community = CommunityData('public', mpModel=1)
     #transport = UdpTransportTarget(('snmpd', 1662))
@@ -145,8 +145,8 @@ def snmpgetFunction(objectOID):
 
     errorIndication, errorStatus, errorIndex, varBinds = next(g)
 
-    for varBind in varBinds:
-        print(' = '.join([x.prettyPrint() for x in varBind]))
+    for oid, val in varBinds:
+        print('%s' % (val))
 
     #g = getCmd(SnmpEngine(),
     #        CommunityData('public'),

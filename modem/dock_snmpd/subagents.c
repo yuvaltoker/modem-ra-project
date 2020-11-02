@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include "subagents.h"
 
+//using namespace std;
+#define MAX_STR_LEN 256
 /*---------------------------------------------------------------------------------------------------*/
 
 /* Make sure those next includes files are at this path, and that you've got the files */
@@ -74,18 +76,22 @@ void shutdownRedis(void)
 static int currentObject_value = 0;
 static int batteryObject_value = 4; // The first value of the mib. (1-100)
 static int channelObject_value = 1; // The first value of the mib. (1-12)
-static enum object_mode { battery_mode, channel_mode, current_mode};
+static char isAliveObject_value[MAX_STR_LEN] = "ALIVE"; // The first value of the mib. ("ALIVE"/"DYING"/"DEAD")
+//static string isAliveObject_value = "ALIVE"; // The first value of the mib. ("ALIVE"/"DYING"/"DEAD")
+static enum object_mode { battery_mode, channel_mode, current_mode, isAlive_mode};
 /** Initializes the sub_agent_test module */
 void
 init_subagents(void)
 {
 //                                      The whole oid as in the MY-TUTORIAL-MIB.txt, without the .0 at the end.
 //                                                                         |
-    static oid batteryObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 4 };
+    static oid batteryObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 4 }; //   modem's "variable"
 
-    static oid channelObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 5 };
+    static oid channelObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 5 }; //   modem's "variable"
 
-    static oid currentObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 6 };
+    static oid currentObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 6 }; // program's "variable"
+
+    static oid isAliveObject_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 2, 4, 1, 1, 7 }; //   modem's "variable"
     //DEBUGMSGTL(("batteryAgentSubagentObject", "Initializing\n"));
 
     // Setting the current modem's id value in redis for the first time
@@ -118,7 +124,12 @@ init_subagents(void)
                                             HANDLER_CAN_RWRITE
         ));
 
-
+    // Registering the mib-handler, thus making the subagent able to maintain the isAlive mib
+    netsnmp_register_handler(
+        netsnmp_create_handler_registration("isAliveObject", handle_isAliveObject,
+                                            isAliveObject_oid, OID_LENGTH(isAliveObject_oid),
+                                            HANDLER_CAN_RWRITE
+        ));
 }
 
 int
@@ -335,10 +346,78 @@ handle_currentObject(netsnmp_mib_handler *handler,
 }
 
 
+
+int
+handle_isAliveObject(netsnmp_mib_handler *handler,
+                               netsnmp_handler_registration *reginfo,
+                               netsnmp_agent_request_info   *reqinfo,
+                               netsnmp_request_info         *requests)
+{
+    int ret;
+    /* we are never called for a GETNEXT if it's registered as a
+       "instance", as it's "megically" handled for us. */
+
+    /* a instance handler also only hands us one request at a time, so
+       we don't need to loop over a list of requests; we'll only get one. */
+
+    switch(reqinfo->mode)
+    {
+     	case MODE_GET: // snmpget
+            snmp_set_var_typed_value(requests->requestvb,  ASN_OCTET_STR,
+                                     isAliveObject_value,
+                                     sizeof(isAliveObject_value));
+            snmp_log(LOG_ERR, "mode (%d) in handle_isAliveObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_RESERVE1:
+            snmp_log(LOG_ERR, "mode (%d) (reserve1) in handle_isAliveObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_RESERVE2:
+            snmp_log(LOG_ERR, "mode (%d) (reserve2) in handle_isAliveObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_FREE:
+            snmp_log(LOG_ERR, "mode (%d) (set-free) in handle_isAliveObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_COMMIT:
+            snmp_log(LOG_ERR, "mode (%d) (commit) in handle_isAliveObject\n", reqinfo->mode);
+            break;
+
+        case MODE_SET_UNDO:
+             snmp_log(LOG_ERR, "mode (%d) (set-undo) in handle_isAliveObject\n", reqinfo->mode);
+             break;
+
+        case MODE_SET_ACTION: // snmpset
+            /* perform the value change here */
+
+            snmp_log(LOG_ERR, "mode (%d) (set-action) in handle_isAliveObject\n", reqinfo->mode);
+            if(requests->requestvb->type != ASN_OCTET_STR) // If it's not a string
+            {
+             	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGTYPE);
+                return SNMP_ERR_WRONGTYPE;
+            }
+            strncpy(isAliveObject_value, requests->requestvb->val.string, MAX_STR_LEN);
+	    isAliveObject_value[MAX_STR_LEN - 1] = '\0';
+            //isAliveObject_value = *requests->requestvb->val.string; // Setting isAliveObject_value as an preparation for the next function
+            SET_objects_redis(isAlive_mode); // Calling the fucntion which takes care of redis' setting
+            break;
+
+        default:
+             /* we should never get here, so this is a really bad error */
+             snmp_log(LOG_ERR, "unknown mode (%d) in handle_isAliveObject\n", reqinfo->mode);
+             return SNMP_ERR_GENERR;
+    }
+    return SNMP_ERR_NOERROR;
+}
+
+
 void GET_objects_redis(int mode) // Manages snmpget
 {   // mode: 0 - battery
     //       1 - channel
     //       2 - current
+    //       3 - isAlive
     //GET LOCAL MANAGE INFO
 
     redisReply *reply;
@@ -348,55 +427,25 @@ void GET_objects_redis(int mode) // Manages snmpget
         // Normal redis get command, getting batteryObjectField from redis server
         reply = redisCommand(c, ("GET modem_NO_%s batteryObjectField", reply->str));
     }
-    else
+    else if(mode == channel_mode)
     {
         // Normal redis get command, getting channelObjectField from redis server
         reply = redisCommand(c, ("GET modem_NO_%s channelObjectField", reply->str));
+    } else if (mode == isAlive_mode)
+    {
+        // Normal redis get command, getting isAliveObjectField from redis server
+        reply = redisCommand(c, ("GET modem_NO_%s isAliveObjectField", reply->str));
     }
 
-    /*if(reply->type == REDIS_REPLY_ERROR)
-    {
-     	snmp_log(LOG_ERR, "GET error: %s\n", reply->str);
-        //DEBUGSGTL(("batteryObject", "GET error: %s\n", reply->str));
-    }
+    if(mode == battery_mode)
+    { batteryObject_value = atoi(reply->str); }
+    else if(mode == channel_mode)
+    { channelObject_value = atoi(reply->str); }
+    else if(mode == current_mode)
+    { currentObject_value = atoi(reply->str); }
     else
-    {
-     	if(reply->str == NULL)
-        {
-            if(mode == battery_mode)
-            { memset(&batteryObject_value, 0, sizeof(batteryObject_value)); }
-            else if(mode == channel_mode)
-            { memset(&channelObject_value, 0, sizeof(channelObject_value)); }
-            else
-            { memset(&currentObject_value, 0, sizeof(currentObject_value)); }
-        }
-	else
-	{
-            if(mode == battery_mode)
-            { memmove(batteryObject_value, reply->str, sizeof(batteryObject_value)); }
-            else if(mode == channel_mode)
-            { memmove(channelObject_value, reply->str, sizeof(channelObject_value)); }
-            else
-            { memmove(currentObject_value, reply->str, sizeof(currentObject_value)); }
-        }
-    }*/
-
-    /*try
-    {*/
-        if(mode == battery_mode)
-        { batteryObject_value = atoi(reply->str); }
-        else if(mode == channel_mode)
-        { channelObject_value = atoi(reply->str); }
-        else
-        { currentObject_value = atoi(reply->str); }
-    /*}
-    catch (exception const &e) // Stoi may throw exception when the string contains letters instead of digits
-    {
-         snmp_log(LOG_ERR, "stoi func error in GET_objects_redis: %s\n", e.what());
-    }*/
-    
-    
-
+    { strncpy(isAliveObject_value, reply->str, MAX_STR_LEN);
+      isAliveObject_value[MAX_STR_LEN - 1] = '\0'; }
     freeReplyObject(reply);
 }
 
@@ -413,10 +462,15 @@ void SET_objects_redis(int mode)
         // Normal redis set command, setting channelObjectField of currentObject_value from redis server
         reply = (redisReply*)(redisCommand(*con, "HSET modem_NO_%d channelObjectField %d",  currentObject_value, channelObject_value));
     }
-    else
+    else if(mode == current_mode)
     {
         // Normal redis set command, setting currentObjectField from redis server
         reply = (redisReply*)(redisCommand(*con, "SET currentObjectField %d",  currentObject_value));
+    }
+    else
+    {
+        // Normal redis set command, setting isAliveObjectField from redis server
+        reply = (redisReply*)(redisCommand(*con, "HSET modem_NO_%d isAliveObjectField %s", currentObject_value, isAliveObject_value));
     }
 
     if(reply->type == REDIS_REPLY_ERROR)

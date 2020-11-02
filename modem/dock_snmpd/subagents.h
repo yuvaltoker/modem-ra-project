@@ -8,6 +8,7 @@ void init_subagents(void);
 Netsnmp_Node_Handler handle_batteryObject;
 Netsnmp_Node_Handler handle_channelObject;
 Netsnmp_Node_Handler handle_currentObject;
+Netsnmp_Node_Handler handle_isAliveObject;
 void GET_objects_redis(int mode);
 void SET_objects_redis(int mode);
 #endif /* SUBAGENTS_H */

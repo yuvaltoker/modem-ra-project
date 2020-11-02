@@ -39,24 +39,28 @@ def incramentTime():
     time.sleep(1)
     timer += 1
 
-#global client
+
 client = redis.Redis(host = 'redis_db', port = 6379)
-#global rand
+
 rand = random.Random()
-#global modem_name
+
 modem_name = "modem_NO_1" # is changed personally for every modem to "modem_NO_x", x stands for the modem's id
-#global num_of_channels
+
 num_of_channels = 12
-#global battery_value
+
 battery_value = 100
-#global channel_value
+
 channel_value = rand.randint(0, num_of_channels)
-#global timer
+
+isAlive_value = "ALIVE"
+
 timer = 0
-#global redis_battery_field
+
 redis_battery_field = "batteryObjectField"
-#global redis_channel_field
+
 redis_channel_field = "channelObjectField"
+
+redis_isAlive_field = "isAliveObjectField"
 
 def main():
     global client
@@ -65,14 +69,16 @@ def main():
     global num_of_channels
     global battery_value
     global channel_value
+    global isAlive_value
     global timer
     global redis_battery_field
     global redis_channel_field
-
+    global redis_isAlive_field
 
     informRaAboutSituation(modem_name + " is now available")
     client.hset(modem_name, redis_battery_field, battery_value)
     client.hset(modem_name, redis_channel_field, channel_value)
+    client.hset(modem_name, redis_isAlive_field, isAlive_value)
     while True:
         while isModemAlive(battery_value):
             incramentTime()

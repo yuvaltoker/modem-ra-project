@@ -30,7 +30,7 @@ MY-TUTORIAL-MIB DEFINITIONS ::= BEGIN
 IMPORTS
 	netSnmpExamples		              FROM NET-SNMP-EXAMPLES-MIB
 	OBJECT-TYPE, Integer32,
-	MODULE-IDENTITY                       FROM SNMPv2-SMI
+	MODULE-IDENTITY, NOTIFICATION-TYPE    FROM SNMPv2-SMI
 	MODULE-COMPLIANCE, OBJECT-GROUP       FROM SNMPv2-CONF;
 
 
@@ -99,23 +99,23 @@ currentObject OBJECT-TYPE
     ::= { nstAgentModules 6 }
 
 
-stringObject OBJECT-TYPE
-    SYNTAX      String
+isAliveObject OBJECT-TYPE
+    SYNTAX      OCTET STRING
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
 	"This is a nice description. Also this is the mib that represent 
-                    actually nothing, but i wanted it here.
+                    the modem's state - ALIVE/DYING/DEAD.
           So, first of all, and last of all, THIS IS A NICE DESCRIPTION"
-    DEFVAL { 3 }
+    DEFVAL { "ALIVE" }
     ::= { nstAgentModules 7 }
 
 
-nstAgentTrapObject NOTIFICATION-TYPE
-	STATUS current
-        OBJECTS { sysLocation }
-	DESCRIPTION "Just a test notification"
-        ::= { nstAgentModules 8 }
+--nstAgentTrapObject NOTIFICATION-TYPE
+--	STATUS current
+--        OBJECTS { sysLocation }
+--	DESCRIPTION "Just a test notification"
+--        ::= { nstAgentModules 8 }
 
 -- END:  Don't forget this!
 END

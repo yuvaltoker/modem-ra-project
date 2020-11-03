@@ -90,7 +90,7 @@ def runDispatcherFunction():
         raise
 
 
-def snmpsetFunction(objectOID, value):
+def snmpsetFunction(objectOID, new_value):
     for (errorIndication,
      errorStatus,
      errorIndex,
@@ -98,7 +98,7 @@ def snmpsetFunction(objectOID, value):
                           CommunityData('public', mpModel=1),
                           UdpTransportTarget(('snmpd', 1662)),
                           ContextData(),
-                          ObjectType(ObjectIdentity(objectOID), Integer32(value)),
+                          ObjectType(ObjectIdentity(objectOID), Integer32(new_value)),
                           lookupMib=False):
 
      if errorIndication:
@@ -111,29 +111,6 @@ def snmpsetFunction(objectOID, value):
      else:
          for oid, val in varBinds:
              print('%s = %s' % (oid, val))
-    #engine = SnmpEngine()
-    #community = CommunityData('public', mpModel=1)
-    #transport = UdpTransportTarget(('snmpd', 1662))
-    #context = ContextData()
-
-    #mibBuilder = builder.MibBuilder() 
-    #mibPath = mibBuilder.getMibSources()+(builder.DirMibSource('/root/.pysnmp/mibs'),)
-    #mibBuilder.setMibSources(*mibPath)
-    #mibBuilder.loadModules('MY-TUTORIAL-MIB')
-    #mibView = view.MibViewController(mibBuilder)
-    ## Your OID goes here.
-    #identity = ObjectIdentity(objectOID).resolveWithMib(mibView)
-
-    ## If this was a string value, use OctetString() instead of Integer().
-    ##new_value = OctetString(value)
-    #new_value = value
-    #type = ObjectType(identity, new_value)
-
-    ## Setting lookupMib=False here because this example uses a numeric OID.
-    #g = setCmd(engine, community, transport, context, identity, type, lexicographicMode=True)
-
-    #errorIndication, errorStatus, errorIndex, varBinds = next(g)
-    #print(errorIndication, varBinds)
 
 def snmpgetFunction(objectOID):
 
@@ -147,13 +124,6 @@ def snmpgetFunction(objectOID):
 
     for oid, val in varBinds:
         print('%s' % (val))
-
-    #g = getCmd(SnmpEngine(),
-    #        CommunityData('public'),
-    #        UdpTransportTarget(('demo.snmplabs.com', 161)),
-    #        ContextData(),
-    #        ObjectType(ObjectIdentity('SNMPv2-MIB', 'sysUpTime', 0)))
-    #next(g)
 
 
 def main():

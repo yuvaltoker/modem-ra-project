@@ -8,6 +8,8 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <stdlib.h>
+/*#include <string>
+using namespace std;*/
 #include "subagents.h"
 
 //using namespace std;
@@ -148,36 +150,30 @@ handle_batteryObject(netsnmp_mib_handler *handler,
     switch(reqinfo->mode)
     {
      	case MODE_GET: // snmpget
+            GET_objects_redis(battery_mode);
             snmp_set_var_typed_value(requests->requestvb, ASN_INTEGER,
                                      &batteryObject_value,
                                      sizeof(batteryObject_value));
-            snmp_log(LOG_ERR, "mode (%d) in handle_batteryObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE1:
-            snmp_log(LOG_ERR, "mode (%d) (reserve1) in handle_batteryObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE2:
-            snmp_log(LOG_ERR, "mode (%d) (reserve2) in handle_batteryObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_FREE:
-            snmp_log(LOG_ERR, "mode (%d) (set-free) in handle_batteryObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_COMMIT:
-            snmp_log(LOG_ERR, "mode (%d) (commit) in handle_batteryObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_UNDO:
-             snmp_log(LOG_ERR, "mode (%d) (set-undo) in handle_batteryObject\n", reqinfo->mode);
              break;
 
         case MODE_SET_ACTION: // snmpset
             /* perform the value change here */
 
-            snmp_log(LOG_ERR, "mode (%d) (set-action) in handle_batteryObject\n", reqinfo->mode);
             if(requests->requestvb->type != ASN_INTEGER) // If it's not an integer
             {
              	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGTYPE);
@@ -217,36 +213,29 @@ handle_channelObject(netsnmp_mib_handler *handler,
     switch(reqinfo->mode)
     {
      	case MODE_GET: // snmpget
+            GET_objects_redis(channel_mode);
             snmp_set_var_typed_value(requests->requestvb, ASN_INTEGER,
                                      &channelObject_value,
                                      sizeof(channelObject_value));
-            snmp_log(LOG_ERR, "mode (%d) in handle_channelObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE1:
-            snmp_log(LOG_ERR, "mode (%d) (reserve1) in handle_channelObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE2:
-            snmp_log(LOG_ERR, "mode (%d) (reserve2) in handle_channelObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_FREE:
-            snmp_log(LOG_ERR, "mode (%d) (set-free) in handle_channelObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_COMMIT:
-            snmp_log(LOG_ERR, "mode (%d) (commit) in handle_channelObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_UNDO:
-             snmp_log(LOG_ERR, "mode (%d) (set-undo) in handle_channelObject\n", reqinfo->mode);
              break;
 
         case MODE_SET_ACTION: // snmpset
             /* perform the value change here */
-
-            snmp_log(LOG_ERR, "mode (%d) (set-action) in handle_channelObject\n", reqinfo->mode);
             if(requests->requestvb->type != ASN_INTEGER) // If it's not an integer
             {
              	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGTYPE);
@@ -287,36 +276,30 @@ handle_currentObject(netsnmp_mib_handler *handler,
     switch(reqinfo->mode)
     {
      	case MODE_GET: // snmpget
+            GET_objects_redis(current_mode);
             snmp_set_var_typed_value(requests->requestvb, ASN_INTEGER,
                                      &currentObject_value,
                                      sizeof(currentObject_value));
-            snmp_log(LOG_ERR, "mode (%d) in handle_currentObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE1:
-            snmp_log(LOG_ERR, "mode (%d) (reserve1) in handle_currentObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE2:
-            snmp_log(LOG_ERR, "mode (%d) (reserve2) in handle_currentObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_FREE:
-            snmp_log(LOG_ERR, "mode (%d) (set-free) in handle_currentObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_COMMIT:
-            snmp_log(LOG_ERR, "mode (%d) (commit) in handle_currentObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_UNDO:
-             snmp_log(LOG_ERR, "mode (%d) (set-undo) in handle_currentObject\n", reqinfo->mode);
              break;
 
         case MODE_SET_ACTION: // snmpset
             /* perform the value change here */
 
-            snmp_log(LOG_ERR, "mode (%d) (set-action) in handle_currentObject\n", reqinfo->mode);
             if(requests->requestvb->type != ASN_INTEGER) // If it's not an integer
             {
              	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGTYPE);
@@ -329,12 +312,8 @@ handle_currentObject(netsnmp_mib_handler *handler,
                 return SNMP_ERR_WRONGVALUE;
             }*/
             
-            snmp_log(LOG_ERR, "before the current_mode printing\n");
-            //snmp_log(LOG_ERR, "current_mode = (%d)\n", current_mode);
-            snmp_log(LOG_ERR,"before the setting value, current mode = %d, currentObject_value = %d\n", current_mode, currentObject_value);
             currentObject_value = *requests->requestvb->val.integer; // Setting currentObject_value as an preparation for the next function
             SET_objects_redis(current_mode); // Calling the fucntion which takes care of redis' setting
-            snmp_log(LOG_ERR, "after entering the SET_objects_redis(current_mode)\n");
             break;
 
         default:
@@ -363,36 +342,29 @@ handle_isAliveObject(netsnmp_mib_handler *handler,
     switch(reqinfo->mode)
     {
      	case MODE_GET: // snmpget
+            GET_objects_redis(isAlive_mode);
             snmp_set_var_typed_value(requests->requestvb,  ASN_OCTET_STR,
                                      isAliveObject_value,
                                      sizeof(isAliveObject_value));
-            snmp_log(LOG_ERR, "mode (%d) in handle_isAliveObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE1:
-            snmp_log(LOG_ERR, "mode (%d) (reserve1) in handle_isAliveObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_RESERVE2:
-            snmp_log(LOG_ERR, "mode (%d) (reserve2) in handle_isAliveObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_FREE:
-            snmp_log(LOG_ERR, "mode (%d) (set-free) in handle_isAliveObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_COMMIT:
-            snmp_log(LOG_ERR, "mode (%d) (commit) in handle_isAliveObject\n", reqinfo->mode);
             break;
 
         case MODE_SET_UNDO:
-             snmp_log(LOG_ERR, "mode (%d) (set-undo) in handle_isAliveObject\n", reqinfo->mode);
              break;
 
         case MODE_SET_ACTION: // snmpset
             /* perform the value change here */
-
-            snmp_log(LOG_ERR, "mode (%d) (set-action) in handle_isAliveObject\n", reqinfo->mode);
             if(requests->requestvb->type != ASN_OCTET_STR) // If it's not a string
             {
              	netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_WRONGTYPE);
@@ -413,28 +385,68 @@ handle_isAliveObject(netsnmp_mib_handler *handler,
 }
 
 
+char* concat(char* a, char* b)
+{
+    snmp_log(LOG_ERR, "#1\n");
+    char* total = malloc (strlen(a) + strlen(b) + 1);
+    snmp_log(LOG_ERR, "#2\n");
+    snmp_log(LOG_ERR, "%s|%s\n", a, b);
+    fprintf(total, "%s%s\0", a, b);
+    snmp_log(LOG_ERR, "#3\n");
+    return total;
+}
+
 void GET_objects_redis(int mode) // Manages snmpget
 {   // mode: 0 - battery
     //       1 - channel
     //       2 - current
     //       3 - isAlive
     //GET LOCAL MANAGE INFO
+    //char next_command[MAX_STR_LEN];
+    
 
     redisReply *reply;
     reply = redisCommand(c, "GET currentObjectField");
     if(mode == battery_mode)
     {
         // Normal redis get command, getting batteryObjectField from redis server
-        reply = redisCommand(c, ("GET modem_NO_%s batteryObjectField", reply->str));
+        //strcpy(next_command, ("HGET modem_NO_%s batteryObjectField", reply->str), ((reply->str).length()+1));
+        /*const char *line1 = "HGET modem_NO_";
+        const char *line2 = reply->str;
+        const char *line3 = " batteryObjectField";
+
+        size_t len1 = strlen(line1);
+        size_t len2 = strlen(line2);
+        size_t len3 = strlen(line3);
+
+        char *totalLine = malloc(len1 + len2 + len3 + 1);
+        if (!totalLine) abort();
+
+        memcpy(totalLine,        line1, len1);
+        memcpy(totalLine + len1, line2, len2);
+        totalLine[len1 + len2] = '\0';*/
+
+        char* next_command1 = concat("HGET modem_NO_", reply->str);
+        snmp_log(LOG_ERR, "#4\n");
+        snmp_log(LOG_ERR, "before:%s.\n", next_command1);
+        next_command1[strlen(next_command1) - 1] = ' '; // replacing the '\0' with ' '
+        snmp_log(LOG_ERR, "after:%s.\n", next_command1);
+        snmp_log(LOG_ERR, "#5\n");
+        char* next_command2 = concat(next_command1, "batteryObjectField");
+        snmp_log(LOG_ERR, "#6\n");
+        reply = redisCommand(c, next_command2);
+        snmp_log(LOG_ERR, "reply for battery get: %s\n", reply->str);
     }
     else if(mode == channel_mode)
     {
         // Normal redis get command, getting channelObjectField from redis server
-        reply = redisCommand(c, ("GET modem_NO_%s channelObjectField", reply->str));
+        reply = redisCommand(c, ("HGET modem_NO_%s channelObjectField", reply->str));
+        snmp_log(LOG_ERR, "reply for channel get: %s\n", reply->str);
     } else if (mode == isAlive_mode)
     {
         // Normal redis get command, getting isAliveObjectField from redis server
-        reply = redisCommand(c, ("GET modem_NO_%s isAliveObjectField", reply->str));
+        reply = redisCommand(c, ("HGET modem_NO_%s isAliveObjectField", reply->str));
+        snmp_log(LOG_ERR, "reply for isAlive get: %s\n", reply->str);
     }
 
     if(mode == battery_mode)

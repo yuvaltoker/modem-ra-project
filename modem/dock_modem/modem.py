@@ -34,6 +34,27 @@ def isModemAlive(battery):
         return True
     return False
 
+def isModemDying(battery):
+    if int(battery) <= 15:
+        return True
+    return False
+
+def updateModemState(modem_name, redis_field, state):
+    global client
+    global battery_value, channel_value, isAlive_value
+    if "battery" in redis_field:
+        battery_value = state
+    elif "channel" in redis_field:
+        channel_value = state
+    elif "isAlive" in redis_field:
+        isAlive_value = state
+    client.hset(modem_name, redis_field, state)
+
+def getModemVariable(modem_name, redis_field):
+    global client
+    return client.hget(modem_name, redis_field)
+
+
 def incramentTime():
     global timer
     time.sleep(1)
@@ -46,11 +67,13 @@ rand = random.Random()
 
 modem_name = "modem_NO_1" # is changed personally for every modem to "modem_NO_x", x stands for the modem's id
 
-num_of_channels = 12
+max_channel = 12
+
+min_channel = 0
 
 battery_value = 100
 
-channel_value = rand.randint(0, num_of_channels)
+channel_value = rand.randint(min_channel, max_channel)
 
 isAlive_value = "ALIVE"
 
@@ -62,49 +85,58 @@ redis_channel_field = "channelObjectField"
 
 redis_isAlive_field = "isAliveObjectField"
 
+update_battery_time = 5
+
+update_channel_time = 30
+
+battery_usage = 1
+
 def main():
     global client
     global rand
     global modem_name
-    global num_of_channels
-    global battery_value
-    global channel_value
-    global isAlive_value
-    global timer
-    global redis_battery_field
-    global redis_channel_field
-    global redis_isAlive_field
-
+    global max_channel, min_channel
+    global battery_value, channel_value, isAlive_value
+    global timer, update_battery_time, update_channel_time, battery_usage
+    global redis_battery_field, redis_channel_field, redis_isAlive_field
+    
     informRaAboutSituation(modem_name + " is now available")
-    client.hset(modem_name, redis_battery_field, battery_value)
-    client.hset(modem_name, redis_channel_field, channel_value)
-    client.hset(modem_name, redis_isAlive_field, isAlive_value)
+    updateModemState(modem_name, redis_battery_field, battery_value)
+    updateModemState(modem_name, redis_channel_field, channel_value)
+    updateModemState(modem_name, redis_isAlive_field, isAlive_value)
+
     while True:
         while isModemAlive(battery_value):
             incramentTime()
             print(timer)
-            battery_value = int(client.hget(modem_name, redis_battery_field))
-            channel_value = int(client.hget(modem_name, redis_channel_field))
-            if haveXSecondsPassed(timer, 5):
+            battery_value = int(getModemVariable(modem_name, redis_battery_field))
+            channel_value = int(getModemVariable(modem_name, redis_channel_field))
+            if haveXSecondsPassed(timer, update_battery_time):
                 print("%s - %i" % ("battery" , battery_value))
-                battery_value = battery_value - 1
+                battery_value = battery_value - battery_usage
                 # updating the redis_db of the new battery state
-                client.hset(modem_name, redis_battery_field, battery_value)
-            if haveXSecondsPassed(timer, 30):
-                channel_value = rand.randint(0, num_of_channels)
+                updateModemState(modem_name, redis_battery_field, battery_value)
+                if isModemDying(battery_value):
+                    updateModemState(modem_name, redis_isAlive_field, "DYING")
+                    informRaAboutSituation(modem_name + " is dying")
+            if haveXSecondsPassed(timer, update_channel_time):
+                channel_value = rand.randint(min_channel, max_channel)
                 print("%s - %i" % ("channel" , channel_value))
                 # updating the redis_db of the new channel state
-                client.hset(modem_name, redis_channel_field, channel_value)
+                updateModemState(modem_name, redis_channel_field, channel_value)
 
-        # modem died :(sending message about that)
+        # modem died :(update isAlive && sending message about that)
+        updateModemState(modem_name, redis_isAlive_field, "DEAD")
         informRaAboutSituation(modem_name + " is dead")
 
         #checking if someone brought the modem back to life (future feature)
-        battery_value = client.hget(modem_name, redis_battery_field)
+        battery_value = getModemVariable(modem_name, redis_battery_field)
         while not isModemAlive(battery_value):
             incramentTime()
-            battery_value = client.hget(modem_name, redis_battery_field)
-
+            battery_value = getModemVariable(modem_name, redis_battery_field)
+        
+        # modem is back to life
+        updateModemState(modem_name, redis_isAlive_field, "ALIVE")
 
 
 

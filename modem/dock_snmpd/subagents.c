@@ -393,7 +393,7 @@ char* concat(char* a, char* b)
     snmp_log(LOG_ERR, "%s|%s\n", a, b);
     fprintf(total, "%s%s\0", a, b);
     snmp_log(LOG_ERR, "#3\n");
-    return total;
+    return &total;
 }
 
 void GET_objects_redis(int mode) // Manages snmpget
@@ -407,47 +407,37 @@ void GET_objects_redis(int mode) // Manages snmpget
 
     redisReply *reply;
     reply = redisCommand(c, "GET currentObjectField");
+    const char *line1 = "HGET modem_NO_";
+    const char *line2 = reply->str;
+    size_t len1 = strlen(line1);
+    size_t len2 = strlen(line2);
+    const char *line3;
+    size_t len3;
+    char *totalLine;
     if(mode == battery_mode)
     {
-        // Normal redis get command, getting batteryObjectField from redis server
-        //strcpy(next_command, ("HGET modem_NO_%s batteryObjectField", reply->str), ((reply->str).length()+1));
-        /*const char *line1 = "HGET modem_NO_";
-        const char *line2 = reply->str;
-        const char *line3 = " batteryObjectField";
-
-        size_t len1 = strlen(line1);
-        size_t len2 = strlen(line2);
-        size_t len3 = strlen(line3);
-
-        char *totalLine = malloc(len1 + len2 + len3 + 1);
-        if (!totalLine) abort();
-
-        memcpy(totalLine,        line1, len1);
-        memcpy(totalLine + len1, line2, len2);
-        totalLine[len1 + len2] = '\0';*/
-
-        char* next_command1 = concat("HGET modem_NO_", reply->str);
-        snmp_log(LOG_ERR, "#4\n");
-        snmp_log(LOG_ERR, "before:%s.\n", next_command1);
-        next_command1[strlen(next_command1) - 1] = ' '; // replacing the '\0' with ' '
-        snmp_log(LOG_ERR, "after:%s.\n", next_command1);
-        snmp_log(LOG_ERR, "#5\n");
-        char* next_command2 = concat(next_command1, "batteryObjectField");
-        snmp_log(LOG_ERR, "#6\n");
-        reply = redisCommand(c, next_command2);
-        snmp_log(LOG_ERR, "reply for battery get: %s\n", reply->str);
+        line3 = " batteryObjectField";
     }
     else if(mode == channel_mode)
     {
-        // Normal redis get command, getting channelObjectField from redis server
-        reply = redisCommand(c, ("HGET modem_NO_%s channelObjectField", reply->str));
-        snmp_log(LOG_ERR, "reply for channel get: %s\n", reply->str);
+        line3 = " channelObjectField";
     } else if (mode == isAlive_mode)
     {
-        // Normal redis get command, getting isAliveObjectField from redis server
-        reply = redisCommand(c, ("HGET modem_NO_%s isAliveObjectField", reply->str));
-        snmp_log(LOG_ERR, "reply for isAlive get: %s\n", reply->str);
+        line3 = " isAliveObjectField";
     }
+    
+    len3 = strlen(line3);
+    totalLine = malloc(len1 + len2 + len3 + 1);
+    if (!totalLine) abort();
+
+    memcpy(totalLine,               line1, len1);
+    memcpy(totalLine + len1,        line2, len2);
+    memcpy(totalLine + len1 + len2, line3, len3);
+    totalLine[len1 + len2 + len3] = '\0';
+
+    // Normal redis get command, getting batteryObjectField from redis server
+    reply = redisCommand(c, totalLine);
+    snmp_log(LOG_ERR, "reply  snmpget: %s\n", reply->str);
 
     if(mode == battery_mode)
     { batteryObject_value = atoi(reply->str); }

@@ -34,8 +34,8 @@ def isModemAlive(battery):
         return True
     return False
 
-def isModemDying(battery):
-    if int(battery) <= 15:
+def isModemDying(battery, informed_dying):
+    if int(battery) <= 15 and not informed_dying:
         return True
     return False
 
@@ -99,7 +99,8 @@ def main():
     global battery_value, channel_value, isAlive_value
     global timer, update_battery_time, update_channel_time, battery_usage
     global redis_battery_field, redis_channel_field, redis_isAlive_field
-    
+    informed_dying = False
+
     informRaAboutSituation(modem_name + " is now available")
     updateModemState(modem_name, redis_battery_field, battery_value)
     updateModemState(modem_name, redis_channel_field, channel_value)
@@ -116,9 +117,10 @@ def main():
                 battery_value = battery_value - battery_usage
                 # updating the redis_db of the new battery state
                 updateModemState(modem_name, redis_battery_field, battery_value)
-                if isModemDying(battery_value):
+                if isModemDying(battery_value, informed_dying):
                     updateModemState(modem_name, redis_isAlive_field, "DYING")
                     informRaAboutSituation(modem_name + " is dying")
+                    informed_dying = True
             if haveXSecondsPassed(timer, update_channel_time):
                 channel_value = rand.randint(min_channel, max_channel)
                 print("%s - %i" % ("channel" , channel_value))
@@ -137,6 +139,7 @@ def main():
         
         # modem is back to life
         updateModemState(modem_name, redis_isAlive_field, "ALIVE")
+        informed_dying = False
 
 
 

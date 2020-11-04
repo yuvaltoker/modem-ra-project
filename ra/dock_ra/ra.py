@@ -103,9 +103,9 @@ def snmpsetFunction(objectOID, new_value):
          print('%s at %s' % (errorStatus.prettyPrint(),
                              errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
          break
-     else:
-         for oid, val in varBinds:
-             print('%s = %s' % (oid, val))
+     #else:
+     #    for oid, val in varBinds:
+     #        print('%s = %s' % (oid, val))
 
 def snmpgetFunction(objectOID):
 
@@ -118,7 +118,7 @@ def snmpgetFunction(objectOID):
     errorIndication, errorStatus, errorIndex, varBinds = next(g)
 
     for oid, val in varBinds:
-        return (val)
+        return str(val)
 
 
 def printStateOfModems():
@@ -128,7 +128,6 @@ def printStateOfModems():
     isAliveObjectOID = '1.3.6.1.4.1.8072.2.4.1.1.7'
 
     global numOfModems
-    print('------------------------------------------\n')
     print('\n')
     print('Status of all modems:\n')
     numOfWellModems = 0
@@ -139,16 +138,19 @@ def printStateOfModems():
         battery = snmpgetFunction(batteryObjectOID)
         channel = snmpgetFunction(channelObjectOID)
         state = snmpgetFunction(isAliveObjectOID)
-        if state == "ALIVE":
+        if "ALIVE" in state:
             numOfWellModems = numOfWellModems + 1
-        elif state == "DYING":
+        elif "DYING" in state:
             numOfDyingModems = numOfDyingModems + 1
-        elif state == "DEAD":
+        elif "DEAD" in state:
             numOfDeadModems = numOfDeadModems + 1
         print("Modem NO.%d is %s:" % (i, state))
-        print("    battery = %s\n    channel = %s\n\n" % (battery, channel))
+        print("   -battery = %s\n   -channel = %s\n" % (battery, channel))
         
-    print('\n\n%s total, %s on & good, %s dying and %s dead' %(numOfModems, numOfWellModems, numOfDyingModems, numOfDeadModems))
+    print('\nTotal of %s modems, in them:' % numOfModems)
+    print('        well  - %s' % numOfWellModems)
+    print('        dying - %s' % numOfDyingModems)
+    print('        dead  - %s' % numOfDeadModems)
     print('\n')
     print('------------------------------------------\n')
 
@@ -163,6 +165,7 @@ def main():
     start_time = datetime.datetime.now()
     trapDaemon = snmptrapHandler()
     trapDaemon.start()
+    print('------------------------------------------\n')
     while True:
         #consider moving into time.sleep()
         #now_time = datetime.datetime.now()

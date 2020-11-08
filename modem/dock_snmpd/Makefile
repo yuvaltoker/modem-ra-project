@@ -7,7 +7,6 @@
 # file.
 #
 
-##CC=gcc -std=c99
 CC=gcc -std=c99
 LIBS=-levent -lnetsnmp -lhiredis -lnetsnmpagent -lnetsnmpmibs -lnetsnmphelpers
 NETSNMPCONFIG=net-snmp-config

@@ -66,7 +66,7 @@ client = redis.Redis(host = 'redis_db', port = 6379)
 rand = random.Random()
 
 # is changed personally for every modem to "modem_NO_x", x stands for the modem's id
-modem_name = 'modem_NO_3'
+modem_name='modem_NO_6'
 
 max_channel = 12
 

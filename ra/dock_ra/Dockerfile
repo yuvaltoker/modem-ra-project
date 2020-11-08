@@ -1,11 +1,15 @@
+# What image do we start from
 FROM polinux/snmpd
+
+# The instructions for when the container is on, the ra behavior python program, making it all executable:
 COPY ./instructions.sh /
 COPY ./ra.py /
-COPY ./test.py /
-COPY ./MY-TUTORIAL-MIB.txt /usr/share/snmp/mibs
 RUN chmod 777 /instructions.sh
 RUN chmod 777 /ra.py
-RUN chmod 777 /test.py
+
+# 
+COPY ./MY-TUTORIAL-MIB.txt /usr/share/snmp/mibs
+
 RUN yum install -y nano
 RUN yum install -y python3
 RUN yum install -y epel-release
@@ -19,4 +23,5 @@ RUN pip3 install pysnmp-mibs
 
 # compiling your mib file into one that pysnmp can use, the new file/s destination repository is /root/.pysnmp/mibs
 RUN mibdump.py MY-TUTORIAL-MIB.txt
+
 ENTRYPOINT ["bash","/instructions.sh"]

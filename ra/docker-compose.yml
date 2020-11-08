@@ -1,15 +1,6 @@
 version: "3.8"
 services:
 
-#    snmptrapd:
-#        build:
-#            context: ./dock_snmptrapd
-#            dockerfile: Dockerfile
-#        networks:
-#            - the_network
-#        container_name: snmptrapd
-
-
     ra:
         build:
             context: ./dock_ra

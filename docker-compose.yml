@@ -11,13 +11,22 @@ services:
 
     snmpd:
         build:
-            context: ./dock_snmpd
+            context: ./modem/dock_snmpd
             dockerfile: Dockerfile
         networks:
             - the_network
         depends_on:
             - redis_db
         container_name: snmpd
+
+    ra:
+        build:
+            context: ./ra/dock_ra
+            dockerfile: Dockerfile
+        networks:
+            - the_network
+        container_name: ra
+
 
 networks:
     the_network:

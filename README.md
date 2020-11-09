@@ -30,12 +30,18 @@ Here are the instructions for the user:
 
     # in section 1, enter the first modem, then run the modem's program
     docker exec -it modem_NO_1
+
+    # then
     ./modem.py
 
     # in section 2, enter the second modem, then run the modem's program
     docker exec -it modem_NO_2
+
+    # then
     ./modem.py
 
     # in section 3, enter the third modem, then run the modem's program
     docker exec -it modem_NO_3
+
+    # then
     ./modem.py
